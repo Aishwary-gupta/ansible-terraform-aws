@@ -10,8 +10,7 @@
 
 An enterprise-grade Infrastructure as Code (IaC) and Configuration Management project that provisions, configures, and manages a highly available, multi-tier, multi-AZ web application on AWS using **Terraform**, **Ansible**, **Nginx**, and **Redis**.
 
-> 💡 **Looking for resume bullet points, interview Q&As, or demo video scripts? Check out [SHOWCASE.md](SHOWCASE.md)!**
-
+> 
 ---
 
 ## Architecture Overview
