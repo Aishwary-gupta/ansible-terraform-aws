@@ -1,0 +1,49 @@
+---
+- name: Install Redis Server
+  ansible.builtin.apt:
+    name: redis-server
+    state: present
+    update_cache: yes
+
+- name: Ensure Redis working directory exists
+  ansible.builtin.file:
+    path: /var/lib/redis
+    state: directory
+    owner: redis
+    group: redis
+    mode: '0750'
+
+- name: Deploy Redis configuration template
+  ansible.builtin.template:
+    src: redis.conf.j2
+    dest: /etc/redis/redis.conf
+    owner: redis
+    group: redis
+    mode: '0640'
+  notify: Restart redis
+
+- name: Ensure Redis service is running and enabled on boot
+  ansible.builtin.systemd:
+    name: redis-server
+    state: started
+    enabled: yes
+
+- name: Flush handlers to ensure Redis restarts if config changed
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for Redis port to be open
+  ansible.builtin.wait_for:
+    port: "{{ redis_port }}"
+    delay: 2
+    timeout: 30
+
+- name: Verify Redis PING responds with PONG
+  ansible.builtin.command:
+    cmd: "redis-cli -a {{ redis_password }} ping"
+  register: redis_ping_output
+  changed_when: false
+  failed_when: "'PONG' not in redis_ping_output.stdout"
+
+- name: Display Redis ping confirmation
+  ansible.builtin.debug:
+    msg: "Redis authentication and connectivity verified: {{ redis_ping_output.stdout }}"

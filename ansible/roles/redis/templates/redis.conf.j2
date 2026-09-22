@@ -1,0 +1,38 @@
+# Redis Configuration for {{ project_name }} ({{ environment }})
+
+# Network
+bind {{ redis_bind_interface }}
+protected-mode no
+port {{ redis_port }}
+tcp-backlog 511
+timeout 0
+tcp-keepalive 300
+
+# General
+daemonize no
+supervised systemd
+pidfile /var/run/redis/redis-server.pid
+loglevel notice
+logfile /var/log/redis/redis-server.log
+databases 16
+
+# Security
+requirepass {{ redis_password }}
+
+# Snapshotting & Persistence
+save 900 1
+save 300 10
+save 60 10000
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+dbfilename dump.rdb
+dir /var/lib/redis
+
+appendonly yes
+appendfilename "appendonly.aof"
+appendfsync everysec
+
+# Memory Management
+maxmemory 256mb
+maxmemory-policy allkeys-lru

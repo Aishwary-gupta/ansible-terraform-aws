@@ -1,0 +1,24 @@
+---
+timezone: UTC
+
+project_name: ansible-terraform-automation
+env_name: dev
+
+# Redis Configuration
+redis_port: 6379
+redis_password: "SuperSecretRedisPassword2026!"
+redis_bind_interface: "0.0.0.0"
+
+# Dynamic discovery of Redis Private IP from tag_Role_redis group
+redis_host: "{{ groups['tag_Role_redis'] | map('extract', hostvars, 'private_ip_address') | first }}"
+
+# Web App Configuration
+app_user: ubuntu
+app_group: ubuntu
+app_name: webapp
+app_dir: /opt/webapp
+app_port: 5000
+app_workers: 2
+
+# ALB endpoint for verification
+alb_dns_name: "ansible-terraform-automation-dev-1552532508.ap-south-1.elb.amazonaws.com"

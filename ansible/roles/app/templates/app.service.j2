@@ -1,0 +1,15 @@
+[Unit]
+Description=Gunicorn instance to serve webapp
+After=network.target
+
+[Service]
+User={{ app_user }}
+Group={{ app_group }}
+WorkingDirectory={{ app_dir }}
+Environment="PATH={{ app_dir }}/venv/bin"
+ExecStart={{ app_dir }}/venv/bin/gunicorn --workers {{ app_workers }} --bind 127.0.0.1:{{ app_port }} app:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

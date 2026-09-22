@@ -1,0 +1,62 @@
+---
+# =============================================================================
+# Master Orchestrator Playbook: Ansible + Terraform Infrastructure Automation
+# =============================================================================
+
+# 1. Base configuration on all instances
+- name: Apply Common Base Configuration
+  hosts: all
+  become: true
+  gather_facts: true
+  roles:
+    - common
+
+# 2. Configure Redis Cache Tier
+- name: Configure Redis Server
+  hosts: tag_Role_redis
+  become: true
+  gather_facts: true
+  roles:
+    - redis
+
+# 3. Configure Web Tier (Flask/Gunicorn App + Nginx Reverse Proxy)
+- name: Configure Web Application and Reverse Proxy Tier
+  hosts: tag_Role_web
+  become: true
+  gather_facts: true
+  roles:
+    - app
+    - nginx
+
+# 4. End-to-End ALB Health & Routing Verification
+- name: Verify End-to-End Infrastructure Health via AWS Application Load Balancer
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Wait for ALB Target Group Health Checks to pass and respond on /healthz
+      ansible.builtin.uri:
+        url: "http://{{ alb_dns_name }}/healthz"
+        status_code: 200
+        return_content: yes
+      register: alb_health
+      retries: 25
+      delay: 6
+      until: alb_health.status == 200
+
+    - name: Test Web Application through ALB root endpoint
+      ansible.builtin.uri:
+        url: "http://{{ alb_dns_name }}/"
+        status_code: 200
+        return_content: yes
+      register: alb_root
+
+    - name: Display Deployment & Validation Success Summary
+      ansible.builtin.debug:
+        msg:
+          - "================================================================="
+          - "🎉 DEPLOYMENT SUCCESSFUL & FULLY VERIFIED!"
+          - "ALB Public URL: http://{{ alb_dns_name }}"
+          - "ALB Health Endpoint: http://{{ alb_dns_name }}/healthz"
+          - "Health Response: {{ alb_health.json }}"
+          - "================================================================="

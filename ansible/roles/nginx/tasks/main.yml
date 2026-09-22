@@ -1,0 +1,55 @@
+---
+- name: Install Nginx Web Server
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Remove default Nginx site configuration
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload nginx
+
+- name: Deploy application Nginx reverse proxy configuration
+  ansible.builtin.template:
+    src: webapp.conf.j2
+    dest: /etc/nginx/sites-available/webapp.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload nginx
+
+- name: Enable application Nginx site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/webapp.conf
+    dest: /etc/nginx/sites-enabled/webapp.conf
+    state: link
+  notify: Reload nginx
+
+- name: Test Nginx configuration validity
+  ansible.builtin.command:
+    cmd: nginx -t
+  changed_when: false
+
+- name: Ensure Nginx service is running and enabled
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Flush handlers to reload Nginx
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify Nginx responds on port 80 for /healthz
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/healthz"
+    status_code: 200
+  register: nginx_health
+  retries: 5
+  delay: 2
+  until: nginx_health.status == 200
+
+- name: Display Nginx verification confirmation
+  ansible.builtin.debug:
+    msg: "Nginx reverse proxy operational: {{ nginx_health.json }}"

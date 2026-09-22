@@ -1,0 +1,26 @@
+---
+plugin: amazon.aws.aws_ec2
+regions:
+  - ap-south-1
+
+filters:
+  tag:Project: ansible-terraform-automation
+  instance-state-name:
+    - running
+    - pending
+
+keyed_groups:
+  - key: tags['Role']
+    prefix: tag_Role
+    separator: "_"
+  - key: tags['Environment']
+    prefix: tag_Environment
+    separator: "_"
+
+hostnames:
+  - tag:Name
+  - ip-address
+  - private-ip-address
+
+compose:
+  ansible_host: public_ip_address | default(private_ip_address)

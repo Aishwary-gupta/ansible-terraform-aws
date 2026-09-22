@@ -1,0 +1,33 @@
+﻿# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# SSH Keys & Secrets
+keys/*
+!keys/.gitkeep
+*.pem
+*.key
+
+# Ansible
+*.retry
+ansible/.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+*.SHOWCASE.md

@@ -1,0 +1,70 @@
+---
+- name: Ensure application directory exists
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: '0755'
+
+- name: Create Python virtual environment for web application
+  ansible.builtin.command:
+    cmd: "python3 -m venv {{ app_dir }}/venv"
+    creates: "{{ app_dir }}/venv/bin/activate"
+
+- name: Install Python dependencies (flask, gunicorn, redis)
+  ansible.builtin.pip:
+    name:
+      - flask
+      - gunicorn
+      - redis
+    virtualenv: "{{ app_dir }}/venv"
+    state: present
+
+- name: Deploy application script app.py
+  ansible.builtin.template:
+    src: app.py.j2
+    dest: "{{ app_dir }}/app.py"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: '0644'
+  notify: Restart app
+
+- name: Deploy systemd service unit for application
+  ansible.builtin.template:
+    src: app.service.j2
+    dest: /etc/systemd/system/app.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Reload systemd
+    - Restart app
+
+- name: Ensure application service is running and enabled
+  ansible.builtin.systemd:
+    name: app
+    state: started
+    enabled: yes
+
+- name: Flush handlers to restart app if code updated
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for internal application port 5000 to be open
+  ansible.builtin.wait_for:
+    port: "{{ app_port }}"
+    delay: 2
+    timeout: 30
+
+- name: Verify application /healthz endpoint locally
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ app_port }}/healthz"
+    status_code: 200
+  register: health_resp
+  retries: 5
+  delay: 3
+  until: health_resp.status == 200
+
+- name: Display application health check status
+  ansible.builtin.debug:
+    msg: "Local app health verified: {{ health_resp.json }}"

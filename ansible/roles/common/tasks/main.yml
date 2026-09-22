@@ -1,0 +1,25 @@
+---
+- name: Wait for apt locks to be released (Ubuntu cloud-init)
+  ansible.builtin.raw: while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 2; done
+  changed_when: false
+
+- name: Set system timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Update apt cache and install base utilities
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+    pkg:
+      - curl
+      - wget
+      - htop
+      - git
+      - ufw
+      - python3-pip
+      - python3-venv
+      - net-tools
+      - software-properties-common
+      - ca-certificates
+    state: present
